@@ -1145,6 +1145,50 @@ namespace TimeStepping
         f_stages[i] = f(t + this->c[i] * delta_t, Y);
       }
   }
+
+
+  // ----------------------------------------------------------------------
+  // OperatorSplit
+  // ----------------------------------------------------------------------
+
+  template <typename VectorType>
+  OperatorSplit<VectorType>::OperatorSplit(
+    const std::vector< TimeStepping<VectorType> > operators,
+    const std::vector< OSpair<double> >           stages)
+  {
+    // virtual functions called in constructors and destructors never use the
+    // override in a derived class
+    // for clarity be explicit on which function is called
+    OperatorSplit<VectorType>::initialize(
+					  operators,
+					  stages);
+  }
+
+
+  template <typename VectorType>
+  void
+  OperatorSplit<VectorType>::initialize(
+      const std::vector< TimeStepping<VectorType> >,
+      const std::vector< OSpair<double> > )
+  {
+
+  }
+
+  template <typename VectorType>
+  double
+  OperatorSplit<VectorType>::evolve_one_time_step(
+    const std::function<VectorType(const double, const VectorType &)> &f,
+    const std::function<VectorType(const double,
+                                   const double,
+                                   const VectorType &)> &id_minus_tau_J_inverse,
+    double                                               t,
+    double                                               delta_t,
+    VectorType &                                         y)
+  {
+    return (t + delta_t);
+  }
+
+
 } // namespace TimeStepping
 
 DEAL_II_NAMESPACE_CLOSE
