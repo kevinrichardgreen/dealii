@@ -856,6 +856,80 @@ namespace TimeStepping
      */
     Status status;
   };
+
+
+  /*
+    Pair for encoding an operator split stage:
+    - op_num = which operator
+    - alpha = alpha value for this stage
+  */
+  template<typename T>
+  struct OSpair {
+    size_t op_num;
+    T      alpha;
+  };
+
+  /**
+   * Class for OperatorSplit time stepping
+   */
+  template <typename VectorType>
+  class OperatorSplit : public TimeStepping<VectorType>
+  {
+  public:
+
+    /**
+     * Constructor. This function calls initialize(operators,stages).
+     */
+    OperatorSplit(
+      const std::vector< TimeStepping<VectorType> > operators,
+      const std::vector< OSpair<double> > stages);
+
+
+    /**
+     * Destructor.
+     */
+    ~OperatorSplit() override = default;
+
+    /**
+     * Purely virtual method used to initialize the Runge-Kutta method.
+     */
+    void
+    initialize(
+	       const std::vector< TimeStepping<VectorType> >,
+	       const std::vector< OSpair<double> > )
+      override;
+
+    /**
+     * This function is used to advance from time @p t to t+ @p delta_t. @p f
+     * is the function $ f(t,y) $ that should be integrated, the input
+     * parameters are the time t and the vector y and the output is value of f
+     * at this point. @p id_minus_tau_J_inverse is a function that computes $
+     * (I-\tau J)^{-1}$ where $ I $ is the identity matrix, $ \tau $ is given,
+     * and $ J $ is the Jacobian $ \frac{\partial J}{\partial y} $. The input
+     * parameters this function receives are the time, $ \tau $, and a vector.
+     * The output is the value of function at this point. evolve_one_time_step
+     * returns the time at the end of the time step.
+     */
+    double
+    evolve_one_time_step(
+      const std::function<VectorType(const double, const VectorType &)> &f,
+      const std::function<
+        VectorType(const double, const double, const VectorType &)>
+        &         id_minus_tau_J_inverse,
+      double      t,
+      double      delta_t,
+      VectorType &y) override;
+
+  private:
+    /*
+      Operator substeppers and their stage orderings
+     */
+    std::vector< TimeStepping<VectorType> > operators;
+    std::vector< OSpair<double> >           stages;
+
+  };
+
+
 } // namespace TimeStepping
 
 DEAL_II_NAMESPACE_CLOSE
