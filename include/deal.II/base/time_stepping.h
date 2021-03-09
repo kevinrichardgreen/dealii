@@ -869,6 +869,15 @@ namespace TimeStepping
     T      alpha;
   };
 
+  template<typename VectorType>
+  struct OSoperator {
+    TimeStepping<VectorType> *method;
+    std::function<VectorType(const double, const VectorType &)> function;
+    std::function<VectorType(const double,
+			     const double,
+			     const VectorType &) > id_minus_tau_J_inverse;
+  };
+
   /**
    * Class for OperatorSplit time stepping
    */
@@ -881,8 +890,8 @@ namespace TimeStepping
      * Constructor. This function calls initialize(operators,stages).
      */
     OperatorSplit(
-      const std::vector< TimeStepping<VectorType> > operators,
-      const std::vector< OSpair<double> > stages);
+      const std::vector< OSoperator<VectorType> > operators,
+      const std::vector< OSpair<double> >           stages);
 
 
     /**
@@ -895,8 +904,8 @@ namespace TimeStepping
      */
     void
     initialize(
-	       const std::vector< TimeStepping<VectorType> >,
-	       const std::vector< OSpair<double> > )
+	       const std::vector< OSoperator<VectorType> > operators,
+	       const std::vector< OSpair<double> >         stages)
       override;
 
     /**
@@ -920,12 +929,20 @@ namespace TimeStepping
       double      delta_t,
       VectorType &y) override;
 
+    /** Trimmed down function for an OS method that has been setup */
+    double
+    evolve_one_time_step(
+      double      t,
+      double      delta_t,
+      VectorType &y);
+
+
   private:
     /*
       Operator substeppers and their stage orderings
      */
-    std::vector< TimeStepping<VectorType> > operators;
-    std::vector< OSpair<double> >           stages;
+    std::vector< OSoperator<VectorType> > operators;
+    std::vector< OSpair<double> >         stages;
 
   };
 
