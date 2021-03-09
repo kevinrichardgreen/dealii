@@ -1153,38 +1153,56 @@ namespace TimeStepping
 
   template <typename VectorType>
   OperatorSplit<VectorType>::OperatorSplit(
-    const std::vector< TimeStepping<VectorType> > operators,
-    const std::vector< OSpair<double> >           stages)
+    const std::vector< OSoperator<VectorType> > in_operators,
+    const std::vector< OSpair<double> >         in_stages)
   {
     // virtual functions called in constructors and destructors never use the
     // override in a derived class
     // for clarity be explicit on which function is called
     OperatorSplit<VectorType>::initialize(
-					  operators,
-					  stages);
+					  in_operators,
+					  in_stages);
   }
 
 
   template <typename VectorType>
   void
   OperatorSplit<VectorType>::initialize(
-      const std::vector< TimeStepping<VectorType> >,
-      const std::vector< OSpair<double> > )
+      const std::vector< OSoperator<VectorType> > in_operators,
+      const std::vector< OSpair<double> >         in_stages)
   {
-
+    std::copy(in_operators,operators.begin());
+    std::copy(in_stages,stages.begin());
   }
 
   template <typename VectorType>
   double
   OperatorSplit<VectorType>::evolve_one_time_step(
-    const std::function<VectorType(const double, const VectorType &)> &f,
-    const std::function<VectorType(const double,
-                                   const double,
-                                   const VectorType &)> &id_minus_tau_J_inverse,
     double                                               t,
     double                                               delta_t,
     VectorType &                                         y)
   {
+    std::vector< double > op_time(operators.size(),t); // the current time for
+						       // each operator
+    for(const auto &pair : stages) {
+
+      // Stage info
+      auto op    = pair->op_num;
+      auto alpha = pair->alpha;
+
+      // Operator info (at this stage)
+      auto method = operators[op].method;
+      auto function = operators[op].function;
+      auto id_minus_tau_J_inverse = operators[op].id_minus_tau_J_inverse;
+
+      op_time[op] = method->evolve_one_time_step(
+				      function,
+				      id_minus_tau_J_inverse,
+				      op_time[op],
+				      alpha*delta_t,
+				      y);
+
+    }
     return (t + delta_t);
   }
 
