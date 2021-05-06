@@ -1187,8 +1187,8 @@ namespace TimeStepping
     for(const auto &pair : stages) {
 
       // Stage info
-      auto op    = pair->op_num;
-      auto alpha = pair->alpha;
+      auto op    = pair.op_num;
+      auto alpha = pair.alpha;
 
       // Operator info (at this stage)
       auto method = operators[op].method;
