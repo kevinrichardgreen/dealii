@@ -1171,8 +1171,11 @@ namespace TimeStepping
       const std::vector< OSoperator<VectorType> > in_operators,
       const std::vector< OSpair<double> >         in_stages)
   {
-    std::copy(in_operators,operators.begin());
-    std::copy(in_stages,stages.begin());
+    // Fastest copy into existing vectors
+    operators.resize(in_operators.size());
+    stages.resize(in_stages.size());
+    std::copy(in_operators.begin(),in_operators.end(),operators.begin());
+    std::copy(in_stages.begin(),in_stages.end(),stages.begin());
   }
 
   template <typename VectorType>
