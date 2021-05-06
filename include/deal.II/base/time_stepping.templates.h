@@ -1155,15 +1155,10 @@ namespace TimeStepping
   OperatorSplit<VectorType>::OperatorSplit(
     const std::vector< OSoperator<VectorType> > in_operators,
     const std::vector< OSpair<double> >         in_stages)
+     : operators(in_operators), stages(in_stages)
   {
-    // virtual functions called in constructors and destructors never use the
-    // override in a derived class
-    // for clarity be explicit on which function is called
-    OperatorSplit<VectorType>::initialize(
-					  in_operators,
-					  in_stages);
+    // operators and stages default copy constructed
   }
-
 
   template <typename VectorType>
   void
