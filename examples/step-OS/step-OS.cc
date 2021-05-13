@@ -71,8 +71,8 @@ namespace StepOS
   private:
     void setup_system();
     void assemble_matrices();
-    void do_half_phase_step();
-    void do_full_spatial_step();
+    void do_half_phase_step(double, double, Vector<std::complex<double>>&);
+    void do_full_spatial_step(double, double, Vector<std::complex<double>>&);
     void output_results() const;
 
 
@@ -374,14 +374,18 @@ namespace StepOS
   // it doesn't even use separate vectors for $\Psi^{(n,0)}$ and $\Psi^{(n,1)}$,
   // but just updates the same vector as appropriate.
   template <int dim>
-  void NonlinearSchroedingerEquation<dim>::do_half_phase_step()
+  void NonlinearSchroedingerEquation<dim>::do_half_phase_step(
+    double t,
+    double step,
+    Vector<std::complex<double>> &sol
+							      )
   {
-    for (auto &value : solution)
+    for (auto &value : sol)
       {
         const std::complex<double> i         = {0, 1};
         const double               magnitude = std::abs(value);
 
-        value = std::exp(-i * kappa * magnitude * magnitude * (time_step / 2)) *
+        value = std::exp(-i * kappa * magnitude * magnitude * step) *
                 value;
       }
   }
@@ -401,14 +405,18 @@ namespace StepOS
   // vector `system_rhs`. The final step is then to put the solution so computed
   // back into the `solution` variable.
   template <int dim>
-  void NonlinearSchroedingerEquation<dim>::do_full_spatial_step()
+  void NonlinearSchroedingerEquation<dim>::do_full_spatial_step(
+    double t,
+    double step,
+    Vector<std::complex<double>> &sol
+								)
   {
-    rhs_matrix.vmult(system_rhs, solution);
+    rhs_matrix.vmult(system_rhs, sol);
 
     SparseDirectUMFPACK direct_solver;
     direct_solver.solve(system_matrix, system_rhs);
 
-    solution = system_rhs;
+    sol = system_rhs;
   }
 
 
@@ -619,9 +627,9 @@ namespace StepOS
         std::cout << "Time step " << timestep_number << " at t=" << time
                   << std::endl;
 
-        do_half_phase_step();
-        do_full_spatial_step();
-        do_half_phase_step();
+        do_half_phase_step(time, time_step/2, solution);
+        do_full_spatial_step(time, time_step, solution);
+        do_half_phase_step(time+time_step/2, time_step/2, solution);
 
         if (timestep_number % 1 == 0)
           output_results();
