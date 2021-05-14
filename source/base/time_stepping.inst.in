@@ -14,7 +14,7 @@
 // ---------------------------------------------------------------------
 
 
-for (S : REAL_SCALARS; V : DEAL_II_VEC_TEMPLATES)
+for (S : REAL_AND_COMPLEX_SCALARS; V : DEAL_II_VEC_TEMPLATES)
   {
     template class RungeKutta<V<S>>;
     template class ExplicitRungeKutta<V<S>>;
@@ -24,9 +24,7 @@ for (S : REAL_SCALARS; V : DEAL_II_VEC_TEMPLATES)
     template class Exact<V<S>>;
   }
 
-  }
-
-for (S : REAL_SCALARS; V : DEAL_II_VEC_TEMPLATES)
+for (S : REAL_AND_COMPLEX_SCALARS; V : DEAL_II_VEC_TEMPLATES)
   {
     template class RungeKutta<LinearAlgebra::distributed::V<S>>;
     template class ExplicitRungeKutta<LinearAlgebra::distributed::V<S>>;
@@ -34,8 +32,6 @@ for (S : REAL_SCALARS; V : DEAL_II_VEC_TEMPLATES)
     template class ImplicitRungeKutta<LinearAlgebra::distributed::V<S>>;
     template class EmbeddedExplicitRungeKutta<LinearAlgebra::distributed::V<S>>;
     template class Exact<LinearAlgebra::distributed::V<S>>;
-  }
-
   }
 
 for (V : EXTERNAL_PARALLEL_VECTORS)
