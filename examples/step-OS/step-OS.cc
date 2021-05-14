@@ -44,6 +44,8 @@
 #include <deal.II/numerics/error_estimator.h>
 #include <deal.II/numerics/matrix_tools.h>
 
+#include <deal.II/base/time_stepping.h>
+
 #include <fstream>
 #include <iostream>
 
@@ -619,6 +621,8 @@ namespace StepOS
     VectorTools::interpolate(dof_handler, InitialValues<dim>(), solution);
     output_results();
 
+    TimeStepping::Exact<Vector<std::complex<double>>> half_stepper;
+
     const double end_time = 1;
     for (; time <= end_time; time += time_step)
       {
@@ -626,10 +630,30 @@ namespace StepOS
 
         std::cout << "Time step " << timestep_number << " at t=" << time
                   << std::endl;
+	std::vector<std::function<Vector<std::complex<double>>(const double, const Vector<std::complex<double>> &)>> id;
+	id.push_back([this](const double t, const Vector<std::complex<double>> &y){return y;});
 
-        do_half_phase_step(time, time_step/2, solution);
+	std::vector<std::function<Vector<std::complex<double>>(const double, const double, const Vector<std::complex<double>> &)>> eval;
+	eval.push_back([this](const double t, const double dt, const Vector<std::complex<double>> &y){
+    Vector<std::complex<double>> new_y(y);
+    this->do_half_phase_step(t,dt,new_y);
+    return new_y;
+  });
+
+	half_stepper.evolve_one_time_step(
+					  id,
+					  eval,
+					  time,
+					  time_step/2,
+					  solution);
+        // do_half_phase_step(time, time_step/2, solution);
         do_full_spatial_step(time, time_step, solution);
-        do_half_phase_step(time+time_step/2, time_step/2, solution);
+	half_stepper.evolve_one_time_step(
+					  id,
+					  eval,
+					  time+time_step/2,
+					  time_step/2,
+					  solution);
 
         if (timestep_number % 1 == 0)
           output_results();
