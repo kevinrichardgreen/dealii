@@ -1010,7 +1010,8 @@ namespace TimeStepping
 
     while (!done)
       {
-        error = 0.;
+	// type-independent zeroing of vector
+        error = static_cast<typename VectorType::value_type>(0);
         y     = old_y;
         // Compute the different stages needed.
         compute_stages(f, t, delta_t, y, f_stages);
