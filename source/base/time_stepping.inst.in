@@ -21,6 +21,9 @@ for (S : REAL_SCALARS; V : DEAL_II_VEC_TEMPLATES)
     template class LowStorageRungeKutta<V<S>>;
     template class ImplicitRungeKutta<V<S>>;
     template class EmbeddedExplicitRungeKutta<V<S>>;
+    template class Exact<V<S>>;
+  }
+
   }
 
 for (S : REAL_SCALARS; V : DEAL_II_VEC_TEMPLATES)
@@ -30,6 +33,9 @@ for (S : REAL_SCALARS; V : DEAL_II_VEC_TEMPLATES)
     template class LowStorageRungeKutta<LinearAlgebra::distributed::V<S>>;
     template class ImplicitRungeKutta<LinearAlgebra::distributed::V<S>>;
     template class EmbeddedExplicitRungeKutta<LinearAlgebra::distributed::V<S>>;
+    template class Exact<LinearAlgebra::distributed::V<S>>;
+  }
+
   }
 
 for (V : EXTERNAL_PARALLEL_VECTORS)
@@ -39,4 +45,5 @@ for (V : EXTERNAL_PARALLEL_VECTORS)
     template class LowStorageRungeKutta<V>;
     template class ImplicitRungeKutta<V>;
     template class EmbeddedExplicitRungeKutta<V>;
+    template class Exact<V>;
   }

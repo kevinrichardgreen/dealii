@@ -1146,6 +1146,34 @@ namespace TimeStepping
       }
   }
 
+  // ----------------------------------------------------------------------
+  // Exact
+  // ----------------------------------------------------------------------
+  template <typename VectorType>
+  double
+  Exact<VectorType>::evolve_one_time_step(
+    std::vector<std::function<VectorType(const double, const VectorType &)>> &/*nofunc*/,
+    std::vector<std::function<VectorType(const double,
+                                   const double,
+                                   const VectorType &)>> &exact_eval,
+    double                                               t,
+    double                                               delta_t,
+    VectorType                                          &y)
+  {
+    // Copy construct input vector
+    VectorType old_y(y);
+    double new_t = t + delta_t;
+    // Call exact evaluation routine
+    y = exact_eval[0](t, delta_t, old_y);
+    return new_t;
+  }
+
+  template <typename VectorType>
+  const typename Exact<VectorType>::Status &
+  Exact<VectorType>::get_status() const
+  {
+    return status;
+  }
 
   // ----------------------------------------------------------------------
   // OperatorSplit
