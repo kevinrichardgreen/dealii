@@ -594,7 +594,7 @@ namespace StepOS
     data_out.set_flags(DataOutBase::VtkFlags(time, timestep_number));
 
     const std::string filename =
-      "solution-" + Utilities::int_to_string(timestep_number, 3) + ".vtu";
+      "solutionOS-" + Utilities::int_to_string(timestep_number, 3) + ".vtu";
     std::ofstream output(filename);
     data_out.write_vtu(output);
   }
