@@ -857,6 +857,57 @@ namespace TimeStepping
     Status status;
   };
 
+  /**
+   * Exact time integration class.
+   *
+   */
+  template <typename VectorType>
+  class Exact final : public TimeStepping<VectorType>
+  {
+  public:
+    Exact() = default;
+    ~Exact() override = default;
+
+    /**
+     * This function is used to advance from time @p t to t+ @p delta_t. @p
+     * nofunc is not used in this routine. @p exact_eval is a function that
+     * evaluates the exact solution at time t + delta_t. @p y is state at time t
+     * on input and at time t+delta_t on output.
+     *
+     * evolve_one_time_step returns the time at the end of the time step.
+     */
+    double
+    evolve_one_time_step(
+      std::vector<std::function<VectorType(const double, const VectorType &)>> &/*nofunc*/,
+      std::vector<std::function<
+        VectorType(const double, const double, const VectorType &)>>
+          &exact_eval,
+      double t,
+      double delta_t,
+      VectorType &y) override;
+
+    /**
+     * Structure that stores the name of the method, the number of Newton
+     * iterations and the norm of the residual when exiting the Newton solver.
+     */
+    struct Status : public TimeStepping<VectorType>::Status
+    {
+      Status() = default;
+    };
+
+    /**
+     * Return the status of the current object.
+     */
+    const Status &
+    get_status() const override;
+
+    /**
+     * Status structure of the object.
+     */
+  private:
+    Status status;
+  };
+
 
   /*
     Pair for encoding an operator split stage:
