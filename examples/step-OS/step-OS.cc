@@ -377,8 +377,8 @@ namespace StepOS
   // but just updates the same vector as appropriate.
   template <int dim>
   void NonlinearSchroedingerEquation<dim>::do_half_phase_step(
-    double t,
-    double step,
+    double /*t*/,
+    double step_size,
     Vector<std::complex<double>> &sol
 							      )
   {
@@ -387,7 +387,7 @@ namespace StepOS
         const std::complex<double> i         = {0, 1};
         const double               magnitude = std::abs(value);
 
-        value = std::exp(-i * kappa * magnitude * magnitude * step) *
+        value = std::exp(-i * kappa * magnitude * magnitude * step_size) *
                 value;
       }
   }
@@ -408,8 +408,8 @@ namespace StepOS
   // back into the `solution` variable.
   template <int dim>
   void NonlinearSchroedingerEquation<dim>::do_full_spatial_step(
-    double t,
-    double step,
+    double /*t*/,
+    double /*step_size*/,
     Vector<std::complex<double>> &sol
 								)
   {
@@ -631,7 +631,7 @@ namespace StepOS
         std::cout << "Time step " << timestep_number << " at t=" << time
                   << std::endl;
 	std::vector<std::function<Vector<std::complex<double>>(const double, const Vector<std::complex<double>> &)>> id;
-	id.push_back([this](const double t, const Vector<std::complex<double>> &y){return y;});
+	id.push_back([this](const double /*t*/, const Vector<std::complex<double>> &y){return y;});
 
 	std::vector<std::function<Vector<std::complex<double>>(const double, const double, const Vector<std::complex<double>> &)>> eval;
 	eval.push_back([this](const double t, const double dt, const Vector<std::complex<double>> &y){
