@@ -702,8 +702,44 @@ namespace StepOS
     VectorTools::interpolate(dof_handler, InitialValues<dim>(), solution);
     output_results();
 
-    TimeStepping::Exact<Vector<std::complex<double>>> half_stepper;
+    /* Define methods, operators and alpha for operator split */
+    TimeStepping::Exact<vector_type> half_stepper_method;
+    TimeStepping::ImplicitRungeKutta<vector_type> full_stepper_method(TimeStepping::CRANK_NICOLSON,1);
 
+    /* Define OSoperators to use in the operator split stepper */
+    TimeStepping::OSoperator<vector_type> half_stepper {
+					 &half_stepper_method,
+					 [this](const double /*t*/, const vector_type &y){return y;},
+					 [this](const double t, const double dt, const vector_type &y){
+					   vector_type new_y(y);
+					   this->do_half_phase_step(t,dt,new_y);
+					   return new_y;}
+    };
+
+    TimeStepping::OSoperator<vector_type> full_stepper {
+    							&full_stepper_method,
+    							[this](const double t, const vector_type &y){
+							  // vector_type new_y(y);
+    							  return this->evaluate_spatial_rhs(t, y);
+    							  // new_y = this->evaluate_spatial_rhs(t, new_y);
+							  // return new_y;
+							},
+    							[this](const double t, const double dt, const vector_type &y){
+							  // vector_type new_y(y);
+    							  return this->id_minus_tau_J_inverse(t,dt,y);
+    							  // return this->id_minus_tau_J_inverse(t,dt,new_y);
+							  // return new_y;
+    							}
+    };
+
+    std::vector<TimeStepping::OSpair<double>>  stages{ TimeStepping::OSpair<double>{0, 0.5},
+						       TimeStepping::OSpair<double>{1, 1.0},
+						       TimeStepping::OSpair<double>{0, 0.5}
+    };
+
+    TimeStepping::OperatorSplit<vector_type> os_stepper(std::vector<TimeStepping::OSoperator<vector_type>>{ half_stepper, full_stepper }, stages);
+
+    // Main time loop
     const double end_time = 1;
     for (; time <= end_time; time += time_step)
       {
@@ -711,29 +747,9 @@ namespace StepOS
 
         std::cout << "Time step " << timestep_number << " at t=" << time
                   << std::endl;
-	std::vector<std::function<Vector<std::complex<double>>(const double, const Vector<std::complex<double>> &)>> id;
-	id.push_back([this](const double /*t*/, const Vector<std::complex<double>> &y){return y;});
 
-	std::vector<std::function<Vector<std::complex<double>>(const double, const double, const Vector<std::complex<double>> &)>> eval;
-	eval.push_back([this](const double t, const double dt, const Vector<std::complex<double>> &y){
-    Vector<std::complex<double>> new_y(y);
-    this->do_half_phase_step(t,dt,new_y);
-    return new_y;
-  });
-
-	half_stepper.evolve_one_time_step(
-					  id,
-					  eval,
-					  time,
-					  time_step/2,
-					  solution);
-        // do_half_phase_step(time, time_step/2, solution);
-        do_full_spatial_step(time, time_step, solution);
-	half_stepper.evolve_one_time_step(
-					  id,
-					  eval,
-					  time+time_step/2,
-					  time_step/2,
+	os_stepper.evolve_one_time_step(  time,
+					  time_step,
 					  solution);
 
         if (timestep_number % 1 == 0)
