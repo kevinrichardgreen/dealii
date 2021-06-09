@@ -96,8 +96,6 @@ namespace StepOS
     AffineConstraints<value_type> constraints;
 
     SparsityPattern                    sparsity_pattern;
-    matrix_type system_matrix;
-    matrix_type rhs_matrix;
 
     matrix_type mass_matrix;
     matrix_type system_jacobian;
@@ -106,7 +104,6 @@ namespace StepOS
     SparseDirectUMFPACK inverse_mass_matrix;
 
     vector_type solution;
-    vector_type system_rhs;
 
     double       time;
     double       time_step;
@@ -246,14 +243,11 @@ namespace StepOS
     DoFTools::make_sparsity_pattern(dof_handler, dsp);
     sparsity_pattern.copy_from(dsp);
 
-    system_matrix.reinit(sparsity_pattern);
-    rhs_matrix.reinit(sparsity_pattern);
     system_jacobian.reinit(sparsity_pattern);
     mass_matrix.reinit(sparsity_pattern);
     mass_minus_tau_Jacobian.reinit(sparsity_pattern);
 
     solution.reinit(dof_handler.n_dofs());
-    system_rhs.reinit(dof_handler.n_dofs());
 
     constraints.close();
   }
@@ -318,11 +312,6 @@ namespace StepOS
     const unsigned int dofs_per_cell = fe.n_dofs_per_cell();
     const unsigned int n_q_points    = quadrature_formula.size();
 
-    FullMatrix<value_type> cell_matrix_lhs(dofs_per_cell,
-                                                     dofs_per_cell);
-    FullMatrix<value_type> cell_matrix_rhs(dofs_per_cell,
-                                                     dofs_per_cell);
-
     FullMatrix<value_type> cell_mass_matrix(dofs_per_cell,
                                                      dofs_per_cell);
 
@@ -335,8 +324,6 @@ namespace StepOS
 
     for (const auto &cell : dof_handler.active_cell_iterators())
       {
-        cell_matrix_lhs = static_cast<value_type>(0);
-        cell_matrix_rhs = static_cast<value_type>(0);
         cell_mass_matrix = static_cast<value_type>(0);
         cell_matrix_jacobian = static_cast<value_type>(0);
 
@@ -353,25 +340,6 @@ namespace StepOS
                   {
                     const value_type i = {0, 1};
 
-                    cell_matrix_lhs(k, l) +=
-                      (-i * fe_values.shape_value(k, q_index) *
-                         fe_values.shape_value(l, q_index) +
-                       time_step / 4 * fe_values.shape_grad(k, q_index) *
-                         fe_values.shape_grad(l, q_index) +
-                       time_step / 2 * potential_values[q_index] *
-                         fe_values.shape_value(k, q_index) *
-                         fe_values.shape_value(l, q_index)) *
-                      fe_values.JxW(q_index);
-
-                    cell_matrix_rhs(k, l) +=
-                      (-i * fe_values.shape_value(k, q_index) *
-                         fe_values.shape_value(l, q_index) -
-                       time_step / 4 * fe_values.shape_grad(k, q_index) *
-                         fe_values.shape_grad(l, q_index) -
-                       time_step / 2 * potential_values[q_index] *
-                         fe_values.shape_value(k, q_index) *
-                         fe_values.shape_value(l, q_index)) *
-                      fe_values.JxW(q_index);
 
                 cell_mass_matrix(k,l) +=  fe_values.shape_value(k, q_index) *
                                           fe_values.shape_value(l, q_index) *
@@ -389,12 +357,6 @@ namespace StepOS
           }
 
         cell->get_dof_indices(local_dof_indices);
-        constraints.distribute_local_to_global(cell_matrix_lhs,
-                                               local_dof_indices,
-                                               system_matrix);
-        constraints.distribute_local_to_global(cell_matrix_rhs,
-                                               local_dof_indices,
-                                               rhs_matrix);
 
         constraints.distribute_local_to_global(cell_mass_matrix,
                                                local_dof_indices,
@@ -472,36 +434,6 @@ namespace StepOS
                 value;
       }
   }
-
-
-
-  // The next step is to solve for the linear system in each time step, i.e.,
-  // the second half step of the Strang splitting we use. Recall that it had the
-  // form $C\Psi^{(n,2)} = R\Psi^{(n,1)}$ where $C$ and $R$ are the matrices we
-  // assembled earlier.
-  //
-  // The way we solve this here is using a direct solver. We first form the
-  // right hand side $r=R\Psi^{(n,1)}$ using the SparseMatrix::vmult() function
-  // and put the result into the `system_rhs` variable. We then call
-  // SparseDirectUMFPACK::solver() which takes as argument the matrix $C$
-  // and the right hand side vector and returns the solution in the same
-  // vector `system_rhs`. The final step is then to put the solution so computed
-  // back into the `solution` variable.
-  template <int dim>
-  void NonlinearSchroedingerEquation<dim>::do_full_spatial_step(
-    double /*t*/,
-    double /*step_size*/,
-    vector_type &sol
-								)
-  {
-    rhs_matrix.vmult(system_rhs, sol);
-
-    SparseDirectUMFPACK direct_solver;
-    direct_solver.solve(system_matrix, system_rhs);
-
-    sol = system_rhs;
-  }
-
 
 
   // @sect4{Creating graphical output}
