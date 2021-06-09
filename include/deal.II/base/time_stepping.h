@@ -951,15 +951,6 @@ namespace TimeStepping
     ~OperatorSplit() override = default;
 
     /**
-     * Purely virtual method used to initialize the Runge-Kutta method.
-     */
-    void
-    initialize(
-	       const std::vector< OSoperator<VectorType> > operators,
-	       const std::vector< OSpair<double> >         stages)
-      override;
-
-    /**
      * This function is used to advance from time @p t to t+ @p delta_t. @p f
      * is the function $ f(t,y) $ that should be integrated, the input
      * parameters are the time t and the vector y and the output is value of f

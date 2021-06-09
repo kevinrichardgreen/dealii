@@ -1190,17 +1190,6 @@ namespace TimeStepping
   }
 
   template <typename VectorType>
-  void
-  OperatorSplit<VectorType>::initialize(
-      const std::vector< OSoperator<VectorType> > in_operators,
-      const std::vector< OSpair<double> >         in_stages)
-  {
-    // Fastest copy into existing vectors
-    operators.resize(in_operators.size());
-    stages.resize(in_stages.size());
-    std::copy(in_operators.begin(),in_operators.end(),operators.begin());
-    std::copy(in_stages.begin(),in_stages.end(),stages.begin());
-  }
 
   template <typename VectorType>
   double
