@@ -82,6 +82,8 @@ namespace StepOS
   private:
     void setup_system();
     void assemble_matrices();
+    vector_type evaluate_spatial_rhs(const double, const vector_type&);
+    vector_type id_minus_tau_J_inverse(const double, const double, const vector_type&);
     void do_half_phase_step(double, double, vector_type&);
     void do_full_spatial_step(double, double, vector_type&);
     void output_results() const;
@@ -256,6 +258,36 @@ namespace StepOS
     constraints.close();
   }
 
+  template <int dim>
+  vector_type NonlinearSchroedingerEquation<dim>::evaluate_spatial_rhs(const double /*time*/, const vector_type &y){
+    // Since this is just a linear problem, f = jacobian*y
+    vector_type rhs(dof_handler.n_dofs());
+    rhs = static_cast<value_type>(0);
+    system_jacobian.vmult(rhs, y);
+    // Darn! Has to be done this way due to partial implementation of
+    // SparseDirectUMFPack with std::complex
+    inverse_mass_matrix.solve(mass_matrix,rhs);
+    return rhs;
+  }
+
+  template <int dim>
+  vector_type NonlinearSchroedingerEquation<dim>::id_minus_tau_J_inverse(const double /*time*/, const double tau, const vector_type &y){
+
+    SparseDirectUMFPACK inverse_mass_minus_tau_Jacobian;
+
+    mass_minus_tau_Jacobian.copy_from(mass_matrix);
+    mass_minus_tau_Jacobian.add(-tau, system_jacobian);
+
+    inverse_mass_minus_tau_Jacobian.initialize(mass_minus_tau_Jacobian);
+
+    vector_type result(dof_handler.n_dofs());
+    mass_matrix.vmult(result, y);
+
+    // Again... a limit of the partial std::complex wrapper to SparseDirectUMFPack
+    inverse_mass_minus_tau_Jacobian.solve(mass_minus_tau_Jacobian, result);
+
+    return result;
+  }
 
 
   // Next, we assemble the relevant matrices. The way we have written
