@@ -1190,6 +1190,21 @@ namespace TimeStepping
   }
 
   template <typename VectorType>
+  double
+  OperatorSplit<VectorType>::evolve_one_time_step(
+      f_vfun_type &/*f*/,
+      jac_vfun_type &/*id_minus_tau_J_inverse*/,
+      double      t,
+      double      delta_t,
+      VectorType &/*y*/)
+    {
+      // Not implemented
+    AssertThrow(
+      1,
+      ExcMessage(
+        "OperatorSplit methods not yet implemented for std::vector functions."));
+      return t+delta_t;
+    }
 
   template <typename VectorType>
   double
