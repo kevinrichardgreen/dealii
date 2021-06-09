@@ -56,6 +56,15 @@ namespace StepOS
 {
   using namespace dealii;
 
+  // Types
+  using value_type   = std::complex<double>;
+  using vector_type  = Vector<value_type>;
+  using matrix_type  = SparseMatrix<value_type>;
+  using f_fun_type   = std::function<vector_type(const double, const vector_type &)>;
+  using f_vfun_type  = std::vector<f_fun_type>;
+  using jac_fun_type = std::function<vector_type(const double, const double, const vector_type &)>;
+  using jac_vfun_type = std::vector<jac_fun_type>;
+
   // @sect3{The <code>NonlinearSchroedingerEquation</code> class}
   //
   // Then the main class. It looks very much like the corresponding
@@ -73,8 +82,8 @@ namespace StepOS
   private:
     void setup_system();
     void assemble_matrices();
-    void do_half_phase_step(double, double, Vector<std::complex<double>>&);
-    void do_full_spatial_step(double, double, Vector<std::complex<double>>&);
+    void do_half_phase_step(double, double, vector_type&);
+    void do_full_spatial_step(double, double, vector_type&);
     void output_results() const;
 
 
@@ -82,14 +91,14 @@ namespace StepOS
     FE_Q<dim>          fe;
     DoFHandler<dim>    dof_handler;
 
-    AffineConstraints<std::complex<double>> constraints;
+    AffineConstraints<value_type> constraints;
 
     SparsityPattern                    sparsity_pattern;
-    SparseMatrix<std::complex<double>> system_matrix;
-    SparseMatrix<std::complex<double>> rhs_matrix;
+    matrix_type system_matrix;
+    matrix_type rhs_matrix;
 
-    Vector<std::complex<double>> solution;
-    Vector<std::complex<double>> system_rhs;
+    vector_type solution;
+    vector_type system_rhs;
 
     double       time;
     double       time_step;
@@ -117,21 +126,21 @@ namespace StepOS
   // What precisely these functions return has been discussed at the end of
   // the Introduction section.
   template <int dim>
-  class InitialValues : public Function<dim, std::complex<double>>
+  class InitialValues : public Function<dim, value_type>
   {
   public:
     InitialValues()
-      : Function<dim, std::complex<double>>(1)
+      : Function<dim, value_type>(1)
     {}
 
-    virtual std::complex<double>
+    virtual value_type
     value(const Point<dim> &p, const unsigned int component = 0) const override;
   };
 
 
 
   template <int dim>
-  std::complex<double>
+  value_type
   InitialValues<dim>::value(const Point<dim> & p,
                             const unsigned int component) const
   {
@@ -268,9 +277,11 @@ namespace StepOS
     const unsigned int dofs_per_cell = fe.n_dofs_per_cell();
     const unsigned int n_q_points    = quadrature_formula.size();
 
-    FullMatrix<std::complex<double>> cell_matrix_lhs(dofs_per_cell,
+    FullMatrix<value_type> cell_matrix_lhs(dofs_per_cell,
                                                      dofs_per_cell);
-    FullMatrix<std::complex<double>> cell_matrix_rhs(dofs_per_cell,
+    FullMatrix<value_type> cell_matrix_rhs(dofs_per_cell,
+                                                     dofs_per_cell);
+
                                                      dofs_per_cell);
 
     std::vector<types::global_dof_index> local_dof_indices(dofs_per_cell);
@@ -279,8 +290,8 @@ namespace StepOS
 
     for (const auto &cell : dof_handler.active_cell_iterators())
       {
-        cell_matrix_lhs = std::complex<double>(0.);
-        cell_matrix_rhs = std::complex<double>(0.);
+        cell_matrix_lhs = static_cast<value_type>(0);
+        cell_matrix_rhs = static_cast<value_type>(0);
 
         fe_values.reinit(cell);
 
@@ -293,7 +304,7 @@ namespace StepOS
               {
                 for (unsigned int l = 0; l < dofs_per_cell; ++l)
                   {
-                    const std::complex<double> i = {0, 1};
+                    const value_type i = {0, 1};
 
                     cell_matrix_lhs(k, l) +=
                       (-i * fe_values.shape_value(k, q_index) *
@@ -379,12 +390,12 @@ namespace StepOS
   void NonlinearSchroedingerEquation<dim>::do_half_phase_step(
     double /*t*/,
     double step_size,
-    Vector<std::complex<double>> &sol
+    vector_type &sol
 							      )
   {
+    const value_type i         = {0, 1};
     for (auto &value : sol)
       {
-        const std::complex<double> i         = {0, 1};
         const double               magnitude = std::abs(value);
 
         value = std::exp(-i * kappa * magnitude * magnitude * step_size) *
@@ -410,7 +421,7 @@ namespace StepOS
   void NonlinearSchroedingerEquation<dim>::do_full_spatial_step(
     double /*t*/,
     double /*step_size*/,
-    Vector<std::complex<double>> &sol
+    vector_type &sol
 								)
   {
     rhs_matrix.vmult(system_rhs, sol);
@@ -501,7 +512,7 @@ namespace StepOS
           Assert(inputs.solution_values[q].size() == 2,
                  ExcDimensionMismatch(inputs.solution_values[q].size(), 2));
 
-          const std::complex<double> psi(inputs.solution_values[q](0),
+          const value_type psi(inputs.solution_values[q](0),
                                          inputs.solution_values[q](1));
           computed_quantities[q](0) = std::norm(psi);
         }
@@ -564,7 +575,7 @@ namespace StepOS
           max_phase =
             std::max(max_phase,
                      std::arg(
-                       std::complex<double>(inputs.solution_values[q](0),
+                       value_type(inputs.solution_values[q](0),
                                             inputs.solution_values[q](1))));
         }
 
