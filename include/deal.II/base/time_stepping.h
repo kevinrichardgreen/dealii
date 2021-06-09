@@ -887,8 +887,7 @@ namespace TimeStepping
       VectorType &y) override;
 
     /**
-     * Structure that stores the name of the method, the number of Newton
-     * iterations and the norm of the residual when exiting the Newton solver.
+     *
      */
     struct Status : public TimeStepping<VectorType>::Status
     {
@@ -922,11 +921,14 @@ namespace TimeStepping
 
   template<typename VectorType>
   struct OSoperator {
+    // Function signature types
+    using f_fun_type = std::function<VectorType(const double, const VectorType &)>;
+    using jac_fun_type = std::function<
+        VectorType(const double, const double, const VectorType &)>;
+    // Data
     TimeStepping<VectorType> *method;
-    std::function<VectorType(const double, const VectorType &)> function;
-    std::function<VectorType(const double,
-			     const double,
-			     const VectorType &) > id_minus_tau_J_inverse;
+    f_fun_type function;
+    jac_fun_type id_minus_tau_J_inverse;
   };
 
   /**
@@ -936,6 +938,13 @@ namespace TimeStepping
   class OperatorSplit : public TimeStepping<VectorType>
   {
   public:
+
+    // Function signature types
+    using f_fun_type = std::function<VectorType(const double, const VectorType &)>;
+    using f_vfun_type = std::vector<f_fun_type>;
+    using jac_fun_type = std::function<
+        VectorType(const double, const double, const VectorType &)>;
+    using jac_vfun_type = std::vector<jac_fun_type>;
 
     /**
      * Constructor. This function calls initialize(operators,stages).
@@ -963,10 +972,8 @@ namespace TimeStepping
      */
     double
     evolve_one_time_step(
-      const std::function<VectorType(const double, const VectorType &)> &f,
-      const std::function<
-        VectorType(const double, const double, const VectorType &)>
-        &         id_minus_tau_J_inverse,
+      f_vfun_type &f,
+      jac_vfun_type &id_minus_tau_J_inverse,
       double      t,
       double      delta_t,
       VectorType &y) override;

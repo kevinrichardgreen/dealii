@@ -1208,8 +1208,8 @@ namespace TimeStepping
 
       // Operator info (at this stage)
       auto method = operators[op].method;
-      auto function = operators[op].function;
-      auto id_minus_tau_J_inverse = operators[op].id_minus_tau_J_inverse;
+      f_vfun_type function{operators[op].function};
+      jac_vfun_type id_minus_tau_J_inverse{operators[op].id_minus_tau_J_inverse};
 
       op_time[op] = method->evolve_one_time_step(
 				      function,
