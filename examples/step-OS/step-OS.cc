@@ -228,7 +228,7 @@ namespace StepOS
   void NonlinearSchroedingerEquation<dim>::setup_system()
   {
     GridGenerator::hyper_cube(triangulation, -1, 1);
-    triangulation.refine_global(6);
+    triangulation.refine_global(5);
 
     std::cout << "Number of active cells: " << triangulation.n_active_cells()
               << std::endl;
@@ -636,7 +636,7 @@ namespace StepOS
 
     /* Define methods, operators and alpha for operator split */
     TimeStepping::Exact<vector_type> half_stepper_method;
-    TimeStepping::ImplicitRungeKutta<vector_type> full_stepper_method(TimeStepping::CRANK_NICOLSON,1);
+    TimeStepping::ImplicitRungeKutta<vector_type> full_stepper_method(TimeStepping::IMPLICIT_MIDPOINT,1);
 
     /* Define OSoperators to use in the operator split stepper */
     TimeStepping::OSoperator<vector_type> half_stepper {
