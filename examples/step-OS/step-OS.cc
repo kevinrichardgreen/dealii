@@ -291,6 +291,10 @@ namespace StepOS
     FullMatrix<value_type> cell_matrix_rhs(dofs_per_cell,
                                                      dofs_per_cell);
 
+    FullMatrix<value_type> cell_mass_matrix(dofs_per_cell,
+                                                     dofs_per_cell);
+
+    FullMatrix<value_type> cell_matrix_jacobian(dofs_per_cell,
                                                      dofs_per_cell);
 
     std::vector<types::global_dof_index> local_dof_indices(dofs_per_cell);
@@ -301,6 +305,8 @@ namespace StepOS
       {
         cell_matrix_lhs = static_cast<value_type>(0);
         cell_matrix_rhs = static_cast<value_type>(0);
+        cell_mass_matrix = static_cast<value_type>(0);
+        cell_matrix_jacobian = static_cast<value_type>(0);
 
         fe_values.reinit(cell);
 
@@ -334,6 +340,18 @@ namespace StepOS
                          fe_values.shape_value(k, q_index) *
                          fe_values.shape_value(l, q_index)) *
                       fe_values.JxW(q_index);
+
+                cell_mass_matrix(k,l) +=  fe_values.shape_value(k, q_index) *
+                                          fe_values.shape_value(l, q_index) *
+                                          fe_values.JxW(q_index);
+
+		cell_matrix_jacobian(k,l) += -i * ( fe_values.shape_grad(k, q_index) *
+						    fe_values.shape_grad(l, q_index) / 2.0 +
+					          potential_values[q_index] *
+						    fe_values.shape_value(k, q_index) *
+						    fe_values.shape_value(l, q_index)) *
+		  fe_values.JxW(q_index);
+
                   }
               }
           }
@@ -345,7 +363,18 @@ namespace StepOS
         constraints.distribute_local_to_global(cell_matrix_rhs,
                                                local_dof_indices,
                                                rhs_matrix);
+
+        constraints.distribute_local_to_global(cell_mass_matrix,
+                                               local_dof_indices,
+                                               mass_matrix);
+        constraints.distribute_local_to_global(cell_matrix_jacobian,
+                                               local_dof_indices,
+                                               system_jacobian);
+
       }
+
+    inverse_mass_matrix.initialize(mass_matrix);
+
   }
 
 
