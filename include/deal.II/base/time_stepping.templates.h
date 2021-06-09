@@ -1222,6 +1222,12 @@ namespace TimeStepping
     return (t + delta_t);
   }
 
+  template <typename VectorType>
+  const typename OperatorSplit<VectorType>::Status &
+  OperatorSplit<VectorType>::get_status() const
+  {
+    return status;
+  }
 
 } // namespace TimeStepping
 

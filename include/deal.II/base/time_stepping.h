@@ -978,6 +978,19 @@ namespace TimeStepping
       double      delta_t,
       VectorType &y);
 
+    /**
+     *
+     */
+    struct Status : public TimeStepping<VectorType>::Status
+    {
+      Status() = default;
+    };
+
+    /**
+     * Return the status of the current object.
+     */
+    const Status &
+    get_status() const override;
 
   private:
     /*
@@ -985,6 +998,8 @@ namespace TimeStepping
      */
     std::vector< OSoperator<VectorType> > operators;
     std::vector< OSpair<double> >         stages;
+
+    Status status;
 
   };
 
