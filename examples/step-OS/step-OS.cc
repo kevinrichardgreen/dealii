@@ -97,6 +97,12 @@ namespace StepOS
     matrix_type system_matrix;
     matrix_type rhs_matrix;
 
+    matrix_type mass_matrix;
+    matrix_type system_jacobian;
+    matrix_type mass_minus_tau_Jacobian;
+
+    SparseDirectUMFPACK inverse_mass_matrix;
+
     vector_type solution;
     vector_type system_rhs;
 
@@ -240,6 +246,9 @@ namespace StepOS
 
     system_matrix.reinit(sparsity_pattern);
     rhs_matrix.reinit(sparsity_pattern);
+    system_jacobian.reinit(sparsity_pattern);
+    mass_matrix.reinit(sparsity_pattern);
+    mass_minus_tau_Jacobian.reinit(sparsity_pattern);
 
     solution.reinit(dof_handler.n_dofs());
     system_rhs.reinit(dof_handler.n_dofs());
