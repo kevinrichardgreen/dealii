@@ -44,13 +44,13 @@ namespace TimeStepping
     VectorType &y)
   {
     AssertThrow(
-      F.size() == 0,
+      F.size() == 1,
       ExcMessage(
-        "RungeKutta methods cannot handle more that one function to integate."));
+        "RungeKutta methods cannot handle more than one function to integate."));
     AssertThrow(
-      J_inverse.size() == 0,
+      J_inverse.size() == 1,
       ExcMessage(
-        "RungeKutta methods cannot handle more that one function to integate."));
+        "RungeKutta methods cannot handle more than one function to integate."));
 
     return evolve_one_time_step(F[0], J_inverse[0], t, delta_t, y);
   }
@@ -1200,7 +1200,7 @@ namespace TimeStepping
     {
       // Not implemented
     AssertThrow(
-      1,
+      false,
       ExcMessage(
         "OperatorSplit methods not yet implemented for std::vector functions."));
       return t+delta_t;
