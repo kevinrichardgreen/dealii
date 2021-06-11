@@ -165,7 +165,12 @@ namespace TimeStepping
     MAX_DELTA_T
   };
 
-
+  /**
+   * Specifies linear/nonlinear problem
+   * - RK stage solve/evaluation optimizations can be
+   *   performed for linear
+   */
+  enum ProblemType {LINEAR,NONLINEAR};
 
   /**
    * Abstract class for time stepping methods. These methods assume that the
@@ -199,6 +204,20 @@ namespace TimeStepping
       double                                                          t,
       double                                                          delta_t,
       VectorType &                                                    y) = 0;
+
+
+    /**
+     * Problem type defaults to nonlinear unless otherwise specified
+     */
+    ProblemType problem_type = NONLINEAR;
+
+    /**
+     * Additional members for more optimal control over solves
+     */
+    std::function<VectorType(const VectorType&)> jacobian_matvec;
+    std::function<VectorType(const VectorType&)> mass_matvec;
+    std::function<VectorType(const double,const VectorType&)> evaluate_rhs;
+    std::function<VectorType(const double,const VectorType&)> solve_mass_minus_tau_J;
 
     /**
      * Empty structure used to store information.

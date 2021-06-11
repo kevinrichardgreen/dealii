@@ -629,16 +629,22 @@ namespace TimeStepping
         const double new_t       = t + this->c[i] * delta_t;
         const double new_delta_t = this->a[i][i] * delta_t;
         VectorType & f_stage     = f_stages[i];
-        newton_solve(
-          [this, &f, new_t, new_delta_t, &old_y, &f_stage](
-            const VectorType &y, VectorType &residual) {
-            this->compute_residual(
-              f, new_t, new_delta_t, old_y, y, f_stage, residual);
-          },
-          [&id_minus_tau_J_inverse, new_t, new_delta_t](const VectorType &y) {
-            return id_minus_tau_J_inverse(new_t, new_delta_t, y);
-          },
-          y);
+
+	if(this->problem_type == NONLINEAR) {
+	  newton_solve(
+            [this, &f, new_t, new_delta_t, &old_y, &f_stage](
+              const VectorType &y, VectorType &residual) {
+              this->compute_residual(
+                f, new_t, new_delta_t, old_y, y, f_stage, residual);
+            },
+            [&id_minus_tau_J_inverse, new_t, new_delta_t](const VectorType &y) {
+              return id_minus_tau_J_inverse(new_t, new_delta_t, y);
+            },
+            y);
+	} else if (this->problem_type == LINEAR) {
+	  f_stage = this->jacobian_matvec(old_y);
+	  f_stage = this->solve_mass_minus_tau_J(new_delta_t, f_stage);
+	}
       }
   }
 
