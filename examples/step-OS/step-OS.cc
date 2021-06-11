@@ -84,10 +84,10 @@ namespace StepOS
     void assemble_matrices();
     vector_type evaluate_spatial_rhs(const double, const vector_type&);
     vector_type id_minus_tau_J_inverse(const double, const double, const vector_type&);
+    void solve_mass_minus_tau_J(const double,const matrix_type&, const matrix_type&, vector_type&);
     void do_half_phase_step(double, double, vector_type&);
     void do_full_spatial_step(double, double, vector_type&);
     void output_results() const;
-
 
     Triangulation<dim> triangulation;
     FE_Q<dim>          fe;
@@ -283,6 +283,23 @@ namespace StepOS
     return result;
   }
 
+  template <int dim>
+  void NonlinearSchroedingerEquation<dim>::solve_mass_minus_tau_J(const double tau,
+								  const matrix_type &mass_matrix,
+								  const matrix_type &jacobian_matrix,
+								  vector_type &rhs_and_sol){
+
+    SparseDirectUMFPACK inverse_mass_minus_tau_Jacobian;
+
+    mass_minus_tau_Jacobian.copy_from(mass_matrix);
+    mass_minus_tau_Jacobian.add(-tau, jacobian_matrix);
+
+    inverse_mass_minus_tau_Jacobian.initialize(mass_minus_tau_Jacobian);
+    inverse_mass_minus_tau_Jacobian.solve(mass_minus_tau_Jacobian, rhs_and_sol);
+
+  }
+
+
 
   // Next, we assemble the relevant matrices. The way we have written
   // the Crank-Nicolson discretization of the spatial step of the Strang
@@ -366,7 +383,6 @@ namespace StepOS
                                                system_jacobian);
 
       }
-
     inverse_mass_matrix.initialize(mass_matrix);
 
   }
@@ -636,8 +652,6 @@ namespace StepOS
 
     /* Define methods, operators and alpha for operator split */
     TimeStepping::Exact<vector_type> half_stepper_method;
-    TimeStepping::ImplicitRungeKutta<vector_type> full_stepper_method(TimeStepping::IMPLICIT_MIDPOINT,1);
-
     /* Define OSoperators to use in the operator split stepper */
     TimeStepping::OSoperator<vector_type> half_stepper {
 					 &half_stepper_method,
@@ -647,6 +661,30 @@ namespace StepOS
 					   this->do_half_phase_step(t,dt,new_y);
 					   return new_y;}
     };
+
+    TimeStepping::ImplicitRungeKutta<vector_type> full_stepper_method(TimeStepping::IMPLICIT_MIDPOINT,1);
+    full_stepper_method.problem_type = TimeStepping::LINEAR;
+
+    full_stepper_method.evaluate_rhs = [this](const double t, const vector_type &y){
+					 return this->evaluate_spatial_rhs(t, y);
+				       };
+    full_stepper_method.jacobian_matvec = [this](const vector_type & in) {
+					    vector_type out(in);
+					    system_jacobian.vmult(out,in);
+					    return out;
+					  };
+    full_stepper_method.mass_matvec = [this](const vector_type & in) {
+					    vector_type out(in);
+					    mass_matrix.vmult(out,in);
+					    return out;
+					  };
+
+    full_stepper_method.solve_mass_minus_tau_J = [this](const double tau,const vector_type& rhs) {
+						   vector_type out(rhs);
+						   this->solve_mass_minus_tau_J(tau,this->mass_matrix,this->system_jacobian,out);
+						   return out;
+						 };
+
 
     TimeStepping::OSoperator<vector_type> full_stepper {
     							&full_stepper_method,
